@@ -38,5 +38,4 @@ else:
         print(f"Error: {e}")
 
 if __name__ == "__main__":
-    change_sphere_to_pyramid()</content>
-<parameter name="filePath">C:\Users\hpbee\IdeaProjects\Blender\shipyard\change_sphere_to_pyramid.py
+    change_sphere_to_pyramid()
