@@ -51,6 +51,11 @@ This is done by taking a photo of the drawing and labeling it with the date and 
 We will take a camera position and direction that captures the entire drawing in the frame, ensuring that all details are visible. The camera will be positioned at a fixed distance from the drawing to maintain consistency across all snapshots.
 The images are then stored in a folder named "images" in the ship's folder.
 
+# Credits
+
+The image `img.png` is credited to:
+[De Zeven Provincien 1665 by 0seahorse - finished - 1/100 - card](https://modelshipworld.com/topic/26344-de-zeven-provincien-1665-by-0seahorse-finished-1100-card/)
+
 # Image Processing
 
 To process the images, we will use Python's OpenCV library. This will allow us to perform tasks such as edge detection, contour analysis, and color segmentation to better understand the drawing.

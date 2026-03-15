@@ -2,7 +2,7 @@ from PIL import Image
 import os
 
 # Open the image
-img_path = r'1666\7-provinces\20250821_115101.jpg'
+img_path = r'1665\7-provinces\20250821_115101.jpg'
 img = Image.open(img_path)
 
 # Image size is (4000, 3000)
@@ -21,7 +21,7 @@ crop_box = (920, 1080, 3240, 2820)
 fragment = img.crop(crop_box)
 
 # Save the fragment
-output_path = r'1666\7-provinces\images\schematic_fragment.png'
+output_path = r'1665\7-provinces\images\schematic_fragment.png'
 os.makedirs(os.path.dirname(output_path), exist_ok=True)
 fragment.save(output_path)
 

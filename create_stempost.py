@@ -7,67 +7,86 @@ def create_stempost():
 
     # Keel length: 37.9m (along X-axis, centered at 0,0,0)
     # The front of the ship (bow) is at X = +18.95m.
-    # The stempost is usually raked forward.
+    # The stempost curves forward and up.
+    # It should follow the bow shape and extend further upward.
 
     try:
         with socket.create_connection((host, port), timeout=5) as s:
             code = """
 import bpy
-import math
+import mathutils
 
 # 1. Stempost Parameters
-# Located at the front of the keel (X = 18.95)
-x_pos = 18.95
-height = 10.0
+# Starts at the front of the keel (X = 18.95, Z = 0.4)
+x_start = 18.95
+z_start = 0.4
 thickness = 0.6
 width = 0.6
-rake_angle = 0.3 # Radians (~17.2 degrees forward)
 
-# 2. Create the Stempost (a cube scaled into a beam)
+# 2. Points for the stempost profile
+# (X, Y, Z)
+# The stempost curves forward and up from the keel.
+points = [
+    (18.95, 0.0, 0.4),    # Start at front of Keel
+    (20.0, 0.0, 1.0),     # Curve up/forward
+    (22.0, 0.0, 4.0),     # Sweeping up
+    (23.5, 0.0, 8.0),     # Near upper deck level
+    (24.5, 0.0, 12.0),    # Following the bow flare
+    (25.5, 0.0, 15.0)     # Final top tip
+]
+
+# 3. Cleanup existing
 if "Stempost" in bpy.data.objects:
-    stempost = bpy.data.objects["Stempost"]
-    bpy.data.objects.remove(stempost, do_unlink=True)
-    print("Deleted existing 'Stempost'")
+    bpy.data.objects.remove(bpy.data.objects["Stempost"], do_unlink=True)
+for mesh in bpy.data.meshes:
+    if mesh.name.startswith("Stempost"):
+        bpy.data.meshes.remove(mesh)
+for curve in bpy.data.curves:
+    if curve.name.startswith("Stempost"):
+        bpy.data.curves.remove(curve)
 
-bpy.ops.mesh.primitive_cube_add(location=(x_pos, 0, 0))
-stempost = bpy.context.active_object
-stempost.name = "Stempost"
+# 4. Create Curve Path
+curve_data = bpy.data.curves.new("Stempost_Path", type='CURVE')
+curve_data.dimensions = '3D'
+spline = curve_data.splines.new('BEZIER')
+spline.bezier_points.add(len(points) - 1)
 
-# 3. Scaling
-# primitive_cube_add creates a 2x2x2 cube
-stempost.scale = (thickness / 2.0, width / 2.0, height / 2.0)
-bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+for i, p in enumerate(points):
+    spline.bezier_points[i].co = p
+    spline.bezier_points[i].handle_left_type = 'AUTO'
+    spline.bezier_points[i].handle_right_type = 'AUTO'
 
-# 4. Positioning and Rotation
-# We want the bottom of the beam to be on top of the keel (Z = 0.4)
-# And the beam should rake forward.
-# To rake forward (away from the center), we rotate around the Y axis.
-# Since it's at +X, a positive rotation around Y tilts it towards +X (forward).
-stempost.rotation_euler[1] = rake_angle
+stem_obj = bpy.data.objects.new("Stempost", curve_data)
+bpy.context.collection.objects.link(stem_obj)
 
-# After rotation, we need to adjust the location so the bottom is at the front of the keel.
-# The beam's center is at (x_pos, 0, height/2). 
-# We'll adjust it so the bottom face (in its local space) sits at X=18.95, Z=0.4.
-# A simpler way: set the origin to the bottom face.
-bpy.ops.object.mode_set(mode='EDIT')
-bpy.ops.mesh.select_all(action='SELECT')
-# Move everything up by half its height in local Z
-bpy.ops.transform.translate(value=(0, 0, height/2.0))
-bpy.ops.object.mode_set(mode='OBJECT')
+# 5. Rectangular profile (using curve properties)
+# For a rectangular cross-section, we can use a bevel object
+if "Post_Profile" not in bpy.data.objects:
+    profile_size = 0.6
+    profile_curve = bpy.data.curves.new("Post_Profile", type='CURVE')
+    profile_curve.dimensions = '2D'
+    p_spline = profile_curve.splines.new('POLY')
+    p_spline.use_cyclic_u = True
+    p_spline.points.add(3)
+    p_spline.points[0].co = (-profile_size/2, -profile_size/2, 0, 1)
+    p_spline.points[1].co = (profile_size/2, -profile_size/2, 0, 1)
+    p_spline.points[2].co = (profile_size/2, profile_size/2, 0, 1)
+    p_spline.points[3].co = (-profile_size/2, profile_size/2, 0, 1)
+    profile_obj = bpy.data.objects.new("Post_Profile", profile_curve)
+    bpy.context.collection.objects.link(profile_obj)
+    profile_obj.hide_viewport = True
+    profile_obj.hide_render = True
 
-# Now the origin is at the bottom face. 
-# Set position to top of keel (Z=0.4) at the front (X=18.95)
-stempost.location = (x_pos, 0, 0.4)
+curve_data.bevel_mode = 'OBJECT'
+curve_data.bevel_object = bpy.data.objects["Post_Profile"]
+curve_data.use_fill_caps = True
 
-# 5. Apply Material
+# 6. Apply Material
 if "Keel_Material" in bpy.data.materials:
     mat = bpy.data.materials["Keel_Material"]
-    if not stempost.data.materials:
-        stempost.data.materials.append(mat)
-    else:
-        stempost.data.materials[0] = mat
+    stem_obj.data.materials.append(mat)
 
-print(f"Created 'Stempost' at {stempost.location} with rake angle {rake_angle}")
+print(f"Created curved 'Stempost' starting at {points[0]}")
 """
             command = {
                 "type": "execute_code",

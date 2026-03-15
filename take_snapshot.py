@@ -11,8 +11,8 @@ def take_snapshot():
     now = datetime.now()
     timestamp = now.strftime("%Y%m%d_%H%M%S")
 
-    # Folder to store the snapshots
-    base_dir = "C:/Users/hpbee/IdeaProjects/Blender/shipyard/1666/7-provinces/images"
+    # Folder to store the snapshots (Absolute path to project directory)
+    base_dir = r"C:\Users\hpbee\IdeaProjects\Blender\shipyard\1665\7-provinces\images".replace("\\", "/")
 
     # We will take three snapshots: side (main camera), back, and the full model user perspective camera.
     cameras = [

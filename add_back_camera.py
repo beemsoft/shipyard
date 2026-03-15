@@ -6,8 +6,13 @@ def add_back_camera():
     port = 9876
     
     # Keel length is 37.9m (along the X-axis, centered at 0,0,0)
-    # The back of the ship (stern) would be around X = -18.95 or X = +18.95.
-    # We'll position the camera at X = -35 to look towards the center (0,0,0).
+    # The back of the ship (stern) is at X = -18.95.
+    # We'll position the camera at X = -100 to look towards the center (0,0,5) from the back.
+    # distance = 100, height = 25 -> elevation offset = 20 (Target Z=5)
+    # Angle: atan(20/100) = 0.1974 rad
+    # Euler rotation (in radians):
+    # To look towards +X, we need Z rotation = 90 deg (pi/2) = 1.5708
+    # To look slightly down, we need X rotation = 90 deg + 0.1974 = 1.7682 rad
     
     try:
         with socket.create_connection((host, port), timeout=5) as s:
@@ -17,24 +22,17 @@ import math
 
 # 1. Create the 'Camera_Back' if it doesn't exist
 if "Camera_Back" not in bpy.data.objects:
-    bpy.ops.object.camera_add(location=(-40, 0, 15))
+    bpy.ops.object.camera_add(location=(-100, 0, 25))
     cam_back = bpy.context.active_object
     cam_back.name = "Camera_Back"
     print("Created 'Camera_Back'")
 else:
     cam_back = bpy.data.objects["Camera_Back"]
-    cam_back.location = (-40, 0, 15)
+    cam_back.location = (-100, 0, 25)
     print("Updated 'Camera_Back' location")
 
-# 2. Set rotation to look at the center from the back
-# Position: (-40, 0, 15)
-# Target: (0, 0, 0)
-# Angle: atan(15/40) = 20.56 degrees.
-# Euler rotation (in radians):
-# To look towards +X, we need Z rotation = 90 deg (pi/2)
-# To look slightly down, we need X rotation = 90 deg + 20.56 deg = 110.56 deg
-# 110.56 degrees in radians = 1.9296 rad
-cam_back.rotation_euler = (1.9296, 0, 1.5708)
+# 2. Set rotation to look at the center from the back (stern view)
+cam_back.rotation_euler = (1.7682, 0, 1.5708)
 
 print(f"'Camera_Back' positioned at {cam_back.location} with rotation {cam_back.rotation_euler}")
 """

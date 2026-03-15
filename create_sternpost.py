@@ -7,80 +7,79 @@ def create_sternpost():
     
     # Keel parameters
     keel_length = 37.9
-    keel_height = 0.8
-    keel_width = 0.6
     
     # Sternpost parameters
-    # The sternpost goes upwards at an angle. 
-    # Let's make it about 10 meters high for now as a base.
-    # It should be attached at the back of the keel (X = -18.95).
-    sternpost_height = 8.0
-    sternpost_thickness = 0.6
-    sternpost_width = 0.6
-    # Angle (rake): Dutch ships often had a slightly raked sternpost. 
-    # Let's tilt it back by about 10-15 degrees (approx 0.2 radians).
-    rake_angle = 0.2 
+    # Starts at the back of the keel (X = -18.95, Z = 0.4)
+    x_start = -18.95
+    z_start = 0.4
+    thickness = 0.6
+    width = 0.6
 
     try:
         with socket.create_connection((host, port), timeout=5) as s:
             code = f"""
 import bpy
-import math
+import mathutils
 
-# 1. Sternpost dimensions
-height = {sternpost_height}
-thickness = {sternpost_thickness}
-width = {sternpost_width}
-rake = {rake_angle}
+# 1. Sternpost Points for a nice curve
+points = [
+    ({x_start}, 0.0, {z_start}),
+    ({x_start - 0.5}, 0.0, {z_start + 1.0}),
+    ({x_start - 1.5}, 0.0, {z_start + 4.0}),
+    ({x_start - 2.5}, 0.0, {z_start + 10.0})
+]
 
-# Position at the back of the keel
-# Keel is centered at (0,0,0) with length 37.9, so back is at X = -18.95
-# We want the bottom of the sternpost to meet the top of the keel at the back end.
-# Keel top is at Z = 0.4 (half of 0.8)
-start_x = -18.95
-start_z = 0.4
-
+# 2. Cleanup existing
 if "Sternpost" in bpy.data.objects:
-    sternpost = bpy.data.objects["Sternpost"]
-    print("Found existing 'Sternpost', updating")
-else:
-    bpy.ops.mesh.primitive_cube_add(location=(0, 0, 0))
-    sternpost = bpy.context.active_object
-    sternpost.name = "Sternpost"
-    print("Created new 'Sternpost'")
+    bpy.data.objects.remove(bpy.data.objects["Sternpost"], do_unlink=True)
+for mesh in bpy.data.meshes:
+    if mesh.name.startswith("Sternpost"):
+        bpy.data.meshes.remove(mesh)
+for curve in bpy.data.curves:
+    if curve.name.startswith("Sternpost"):
+        bpy.data.curves.remove(curve)
 
-# Set dimensions: X is thickness, Y is width, Z is height
-# We'll use scale and apply it
-sternpost.scale = (thickness / 2.0, width / 2.0, height / 2.0)
-bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+# 3. Create Curve Path
+curve_data = bpy.data.curves.new("Sternpost_Path", type='CURVE')
+curve_data.dimensions = '3D'
+spline = curve_data.splines.new('BEZIER')
+spline.bezier_points.add(len(points) - 1)
 
-# Rotate it (rake) - rotate around Y axis
-sternpost.rotation_euler = (0, -rake, 0)
+for i, p in enumerate(points):
+    spline.bezier_points[i].co = p
+    spline.bezier_points[i].handle_left_type = 'AUTO'
+    spline.bezier_points[i].handle_right_type = 'AUTO'
 
-# Position it
-# To make the bottom-center of the beam sit at (start_x, 0, start_z):
-# The beam's center is at (0,0,0) in local space.
-# After rotation, we need to offset it.
-# Simple way: move the origin to the bottom of the mesh first.
-bpy.context.view_layer.objects.active = sternpost
-bpy.ops.object.mode_set(mode='EDIT')
-bpy.ops.mesh.select_all(action='SELECT')
-# Move mesh up so bottom is at 0
-bpy.ops.transform.translate(value=(0, 0, height/2.0))
-bpy.ops.object.mode_set(mode='OBJECT')
+stern_obj = bpy.data.objects.new("Sternpost", curve_data)
+bpy.context.collection.objects.link(stern_obj)
 
-# Now set location
-sternpost.location = (start_x, 0, start_z)
+# 4. Rectangular profile (using same profile as stem if possible, or create it)
+if "Post_Profile" not in bpy.data.objects:
+    profile_size = 0.6
+    profile_curve = bpy.data.curves.new("Post_Profile", type='CURVE')
+    profile_curve.dimensions = '2D'
+    p_spline = profile_curve.splines.new('POLY')
+    p_spline.use_cyclic_u = True
+    p_spline.points.add(3)
+    p_spline.points[0].co = (-profile_size/2, -profile_size/2, 0, 1)
+    p_spline.points[1].co = (profile_size/2, -profile_size/2, 0, 1)
+    p_spline.points[2].co = (profile_size/2, profile_size/2, 0, 1)
+    p_spline.points[3].co = (-profile_size/2, profile_size/2, 0, 1)
+    profile_obj = bpy.data.objects.new("Post_Profile", profile_curve)
+    bpy.context.collection.objects.link(profile_obj)
+    profile_obj.hide_viewport = True
+    profile_obj.hide_render = True
 
-# Apply material (same as Keel)
+curve_data.bevel_mode = 'OBJECT'
+curve_data.bevel_object = bpy.data.objects["Post_Profile"]
+curve_data.use_fill_caps = True
+
+# 5. Apply material
 if "Keel_Material" in bpy.data.materials:
     mat = bpy.data.materials["Keel_Material"]
-    if not sternpost.data.materials:
-        sternpost.data.materials.append(mat)
-    else:
-        sternpost.data.materials[0] = mat
+    stern_obj.data.materials.append(mat)
 
-print(f"'Sternpost' added at {{sternpost.location}}")
+print(f"Created curved 'Sternpost' starting at {{points[0]}}")
 """
             command = {
                 "type": "execute_code",

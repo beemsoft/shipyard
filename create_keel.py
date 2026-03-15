@@ -6,73 +6,80 @@ def create_keel_shape():
     port = 9876
     
     # Accurate dimensions for the keel based on historical data for 'De Zeven Provinciën':
-    # Length on gundeck is 163 Amsterdam feet (approx. 46m).
-    # Keel length is 134 Amsterdam feet (approx. 37.9m).
     length = 37.9
     width = 0.6
     height = 0.8
     
     try:
         with socket.create_connection((host, port), timeout=5) as s:
-            # Code to delete the 'Cube' and add a 'Keel' (a long box)
             code = f"""
 import bpy
-import bmesh
+import mathutils
 
-# 1. Remove the 'Cube' if it exists
-if "Cube" in bpy.data.objects:
-    cube = bpy.data.objects["Cube"]
-    bpy.data.objects.remove(cube, do_unlink=True)
-    print("Deleted 'Cube'")
-else:
-    print("'Cube' not found")
-
-# 2. Create the Keel
-# De Zeven Provincien was approx 163 Amsterdam feet (46m) long (gundeck).
-# The actual keel length is 134 Amsterdam feet (37.9m).
-# We'll create a long, narrow box to represent the keel.
-
+# 1. Keel Parameters
 length = {length}
 width = {width}
 height = {height}
 
-# 3. Handle object creation/update
+# Points for a slightly curved keel (dipped in middle)
+points = [
+    (-length/2, 0.0, 0.4),
+    (0.0, 0.0, 0.2),
+    (length/2, 0.0, 0.4)
+]
+
+# 2. Cleanup existing
 if "Keel" in bpy.data.objects:
-    keel = bpy.data.objects["Keel"]
-    print("Found existing 'Keel', resetting and updating dimensions")
-    # To be safe, we'll replace it with a fresh cube of known 2x2x2 size
-    loc = (0, 0, 0)
-    bpy.data.objects.remove(keel, do_unlink=True)
-    bpy.ops.mesh.primitive_cube_add(location=loc)
-    keel = bpy.context.active_object
-    keel.name = "Keel"
-else:
-    # Add a cube and scale it to be a keel
-    bpy.ops.mesh.primitive_cube_add(location=(0, 0, 0))
-    keel = bpy.context.active_object
-    keel.name = "Keel"
-    print("Created new 'Keel' at (0, 0, 0)")
+    bpy.data.objects.remove(bpy.data.objects["Keel"], do_unlink=True)
+for curve in bpy.data.curves:
+    if curve.name.startswith("Keel"):
+        bpy.data.curves.remove(curve)
 
-# Scale it: x is length, y is width, z is height
-# primitive_cube_add creates a 2x2x2 cube, so scale factors are half of desired dimensions
-keel.scale = (length / 2.0, width / 2.0, height / 2.0)
+# 3. Create Curve Path
+curve_data = bpy.data.curves.new("Keel_Path", type='CURVE')
+curve_data.dimensions = '3D'
+spline = curve_data.splines.new('BEZIER')
+spline.bezier_points.add(len(points) - 1)
 
-# Apply scale to make it 'real' geometry
-bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+for i, p in enumerate(points):
+    spline.bezier_points[i].co = p
+    spline.bezier_points[i].handle_left_type = 'AUTO'
+    spline.bezier_points[i].handle_right_type = 'AUTO'
 
-# Add a simple material
+keel_obj = bpy.data.objects.new("Keel", curve_data)
+bpy.context.collection.objects.link(keel_obj)
+
+# 4. Profile for the Keel (0.6 wide, 0.8 high)
+if "Keel_Profile" not in bpy.data.objects:
+    p_width = {width}
+    p_height = {height}
+    profile_curve = bpy.data.curves.new("Keel_Profile", type='CURVE')
+    profile_curve.dimensions = '2D'
+    p_spline = profile_curve.splines.new('POLY')
+    p_spline.use_cyclic_u = True
+    p_spline.points.add(3)
+    p_spline.points[0].co = (-p_width/2, -p_height/2, 0, 1)
+    p_spline.points[1].co = (p_width/2, -p_height/2, 0, 1)
+    p_spline.points[2].co = (p_width/2, p_height/2, 0, 1)
+    p_spline.points[3].co = (-p_width/2, p_height/2, 0, 1)
+    profile_obj = bpy.data.objects.new("Keel_Profile", profile_curve)
+    bpy.context.collection.objects.link(profile_obj)
+    profile_obj.hide_viewport = True
+    profile_obj.hide_render = True
+
+curve_data.bevel_mode = 'OBJECT'
+curve_data.bevel_object = bpy.data.objects["Keel_Profile"]
+curve_data.use_fill_caps = True
+
+# 5. Apply Material
 if "Keel_Material" not in bpy.data.materials:
     mat = bpy.data.materials.new(name="Keel_Material")
-    mat.diffuse_color = (0.1, 0.05, 0.0, 1.0) # Dark wood color
+    mat.diffuse_color = (0.1, 0.05, 0.0, 1.0)
 else:
     mat = bpy.data.materials["Keel_Material"]
+keel_obj.data.materials.append(mat)
 
-if not keel.data.materials:
-    keel.data.materials.append(mat)
-else:
-    keel.data.materials[0] = mat
-
-print("Created 'Keel' at (0, 0, 0)")
+print("Created curved 'Keel'")
 """
             command = {
                 "type": "execute_code",

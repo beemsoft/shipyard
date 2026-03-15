@@ -40,7 +40,7 @@ if rv3d:
     
     # Shift backwards along the local Z-axis
     # Backward in Blender camera is +Z (because default view is -Z)
-    shift_amount = 15.0 # Units
+    shift_amount = 35.0 # Balanced view distance
     direction = cam_obj.matrix_world.to_quaternion() @ mathutils.Vector((0.0, 0.0, 1.0))
     cam_obj.location += direction * shift_amount
     
