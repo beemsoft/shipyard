@@ -1,0 +1,25 @@
+{
+  "ship": "De Zeven Provinciën",
+  "sail_areas": {
+    "mainmast": {
+      "main_topsail": 322,
+      "main_topgallant": 90,
+      "mainsail": 287
+    },
+    "foremast": {
+      "fore_topsail": 232,
+      "fore_topgallant": 62,
+      "foresail": 273
+    },
+    "mizzenmast": {
+      "mizzen_topsail": 93,
+      "mizzen_sail": 128
+    },
+    "bowsprit": {
+      "spritsail": 103,
+      "spritsail_topsail": 84
+    }
+  },
+  "total_area": 1674,
+  "unit": "m2"
+}
