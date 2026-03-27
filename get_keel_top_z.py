@@ -13,7 +13,7 @@ import json
 keel = bpy.data.objects.get("Keel")
 if keel:
     # Test points
-    x_coords = [-17.5, -10.0, 0.0, 10.0, 17.5]
+    x_coords = [14.5, -1.0, -13.5]
     results = {}
     for x in x_coords:
         # Cast a ray from high up down towards the keel
