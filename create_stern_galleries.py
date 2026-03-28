@@ -4,7 +4,7 @@ import json
 def create_stern_galleries():
     host = '127.0.0.1'
     port = 9876
-    
+
     code = """
 import bpy
 import math
@@ -27,14 +27,14 @@ def create_gallery_side(side):
     points_lower = [
         (-15.0, side * 6.0, 9.0),  # On the hull side
         (-17.0, side * 5.5, 9.2),
-        (-18.95, side * 4.0, 9.5)  # Meeting the wing transom/fashion piece
+        (-18.95, side * 5.0, 12.0)  # Meeting the fashion piece at Z=12
     ]
     
     # 2. Upper gallery rail
     points_upper = [
         (-15.0, side * 5.5, 12.0),
         (-17.0, side * 5.0, 12.0),
-        (-19.5, side * 3.6, 12.0) # Meeting the upper stern frame at Z=12 (4 * 0.9)
+        (-18.95, side * 4.0, 14.0) # Meeting the upper stern frame area
     ]
     
     def create_curve(points, name):

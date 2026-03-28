@@ -4,10 +4,10 @@ import json
 def create_sternpost():
     host = '127.0.0.1'
     port = 9876
-    
+
     # Keel parameters
     keel_length = 37.9
-    
+
     # Sternpost parameters
     # Starts at the back of the keel (X = -18.95, Z = 0.4)
     x_start = -18.95
@@ -21,12 +21,11 @@ def create_sternpost():
 import bpy
 import mathutils
 
-# 1. Sternpost Points for a nice curve
+# 1. Sternpost Points for a flat vertical profile
 points = [
     ({x_start}, 0.0, {z_start}),
-    ({x_start - 0.5}, 0.0, {z_start + 1.0}),
-    ({x_start - 1.5}, 0.0, {z_start + 4.0}),
-    ({x_start - 2.5}, 0.0, {z_start + 10.0})
+    ({x_start}, 0.0, {z_start + 4.0}),
+    ({x_start}, 0.0, {z_start + 10.0})
 ]
 
 # 2. Cleanup existing
@@ -87,14 +86,14 @@ print(f"Created curved 'Sternpost' starting at {{points[0]}}")
                     "code": code
                 }
             }
-            
+
             s.sendall(json.dumps(command).encode('utf-8'))
             data = s.recv(16384)
             if data:
                 response = json.loads(data.decode('utf-8'))
                 print("Blender response:")
                 print(json.dumps(response, indent=2))
-            
+
     except Exception as e:
         print(f"Error: {e}")
 

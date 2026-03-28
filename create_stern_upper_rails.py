@@ -14,10 +14,10 @@ for obj in bpy.data.objects:
     if "Stern_Upper_Rail" in obj.name or "Taffrail" in obj.name:
         bpy.data.objects.remove(obj, do_unlink=True)
 
-# Points from Upper_Stern_Frame (from create_upper_stern_frames.py):
+# Points from Upper_Stern_Frame:
 # Base: (-18.95, y_pos, 9.5)
-# Middle: (-19.5, y_pos * 0.9, 12.0)
-# Top: (-19.2, y_pos * 0.8, 15.0)
+# Middle: (-18.95, y_pos * 0.9, 12.0)
+# Top: (-18.95, y_pos * 0.8, 15.0)
 
 y_positions = [-4.0, -2.0, 0.0, 2.0, 4.0]
 
@@ -25,16 +25,13 @@ def create_horizontal_rail(z_level, x_pos, y_scale, name):
     # This creates a curved rail across the vertical frames at a certain height
     points = []
     for y in y_positions:
-        # Interpolate or use known X from vertical frames
-        # For simplicity, we use the values from the frames' bezier points.
-        # At Z=12, X is -19.5, Y is y * 0.9
-        # At Z=15, X is -19.2, Y is y * 0.8
+        # Aligned to flat vertical transom at X=-18.95
         if z_level == 12.0:
-            points.append((-19.5, y * 0.9, 12.0))
+            points.append((-18.95, y * 0.9, 12.0))
         elif z_level == 15.0:
-            points.append((-19.2, y * 0.8, 15.0))
+            points.append((-18.95, y * 0.8, 15.0))
         elif z_level == 13.5: # Intermediate level
-            points.append((-19.4, y * 0.85, 13.5))
+            points.append((-18.95, y * 0.85, 13.5))
 
     curve_data = bpy.data.curves.new(f"{name}_Path", type='CURVE')
     curve_data.dimensions = '3D'
@@ -70,16 +67,14 @@ create_horizontal_rail(12.0, -19.5, 0.9, "Stern_Upper_Rail_Gallery")
 create_horizontal_rail(15.0, -19.2, 0.8, "Stern_Upper_Rail_Taffrail_Base")
 
 # 3. Create the Taffrail Arch (The crown of the stern)
-# The taffrail is usually a higher, decorative arch.
 def create_taffrail_arch():
-    # An arch above the top rail
-    # Top of frames is at Z=15, Y from -3.2 to +3.2 (4 * 0.8)
+    # An arch above the top rail, aligned to X=-18.95
     points = [
-        (-19.2, -3.2, 15.0),
-        (-19.1, -2.0, 16.5),
-        (-19.0, 0.0, 17.5),
-        (-19.1, 2.0, 16.5),
-        (-19.2, 3.2, 15.0)
+        (-18.95, -3.2, 15.0),
+        (-18.95, -2.0, 16.5),
+        (-18.95, 0.0, 17.5),
+        (-18.95, 2.0, 16.5),
+        (-18.95, 3.2, 15.0)
     ]
     
     curve_data = bpy.data.curves.new("Taffrail_Arch_Path", type='CURVE')

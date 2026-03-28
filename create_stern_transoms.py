@@ -27,13 +27,8 @@ for obj in bpy.data.objects:
         bpy.data.objects.remove(obj, do_unlink=True)
 
 # Transom Data (Height Z, Width Y, Depth X-scale)
-# The Wing Transom (top) is the widest.
-transoms = [
-    {"name": "Wing_Transom", "z": 9.5, "width": 8.0, "thickness": 0.6},
-    {"name": "Transom_2", "z": 8.0, "width": 7.2, "thickness": 0.5},
-    {"name": "Transom_3", "z": 6.5, "width": 6.0, "thickness": 0.5},
-    {"name": "Lower_Transom", "z": 5.0, "width": 4.5, "thickness": 0.5}
-]
+# Transoms are internal horizontal supports, now aligned to flat vertical plane X=-18.95
+transoms = []
 
 mat = create_material("Wood_Material", (0.1, 0.05, 0.02, 1.0))
 ship_x_pos = -18.95 # Position of sternpost

@@ -14,11 +14,11 @@ def take_snapshot():
     # Folder to store the snapshots (Absolute path to project directory)
     base_dir = r"C:\Users\hpbee\IdeaProjects\Blender\shipyard\1665\7-provinces\images".replace("\\", "/")
 
-    # We will take three snapshots: side (main camera), back, and the full model user perspective camera.
+    # We will take three snapshots: side, back, and bow.
     cameras = [
-        ("Camera", "side"),
+        ("Side_Camera", "side"),
         ("Camera_Back", "back"),
-        ("User_Perspective_Camera_Full", "user_perspective")
+        ("Camera", "bow")
     ]
 
     for cam_name, suffix in cameras:

@@ -4,7 +4,7 @@ import json
 def create_upper_stern_frames():
     host = '127.0.0.1'
     port = 9876
-    
+
     code = """
 import bpy
 import math
@@ -16,14 +16,14 @@ for obj in bpy.data.objects:
 
 # Define 5 vertical frames that rise from the Wing Transom
 # Wing Transom is at X=-18.95, Y from -4 to +4, Z=9.5
-# These frames will curve slightly inward (tumblehome) and reach up to Z=15 or so.
+# Aligned to flat vertical transom at X=-18.95
 
 def create_upper_frame(y_pos, name):
     # Points: Base on Wing Transom, Middle, Top
     points = [
         (-18.95, y_pos, 9.5),
-        (-19.5, y_pos * 0.9, 12.0),
-        (-19.2, y_pos * 0.8, 15.0)
+        (-18.95, y_pos * 0.9, 12.0),
+        (-18.95, y_pos * 0.8, 15.0)
     ]
     
     curve_data = bpy.data.curves.new(f"{name}_Path", type='CURVE')

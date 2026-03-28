@@ -10,14 +10,14 @@ def create_decks():
     half_length = keel_length / 2.0
     num_ribs = 15
     rib_spacing = keel_length / (num_ribs - 1)
-    
+
     # Python code for Blender
     code = f"""
 import bpy
 import mathutils
 import math
 
-def create_deck(name, num_ribs, half_length, rib_spacing, material_name):
+def create_deck(name, num_ribs, start_x, end_x, spacing, material_name, target_z):
     # Create a mesh for the deck
     mesh = bpy.data.meshes.new(name + "_Mesh")
     obj = bpy.data.objects.new(name, mesh)
@@ -26,28 +26,52 @@ def create_deck(name, num_ribs, half_length, rib_spacing, material_name):
     verts = []
     faces = []
     
-    # Generate vertices along the top of each rib
-    for i in range(num_ribs):
-        x = -half_length + (i * rib_spacing)
-        t = x / half_length
-        factor = math.sqrt(max(0, 1 - t**2))
+    # Generate vertices along the hull shape, including boundaries
+    # We'll sample more points to get a better fit
+    num_samples = 40
+    sample_spacing = (end_x - start_x + 5.0) / (num_samples - 1)
+    current_start_x = start_x - 2.5 # Extend slightly to reach posts
+    
+    actual_verts_count = 0
+    for i in range(num_samples):
+        x = current_start_x + (i * sample_spacing)
         
-        max_width = 7.0
-        max_height = 8.0
+        # 1. Find the exact width by ray-casting against ALL Rib objects AND Stempost/Sternpost
+        width = 0.0
         
-        width = 1.5 + (max_width - 1.5) * factor
-        height = 3.0 + (max_height - 3.0) * factor
+        # Ray cast from center outwards on Y axis
+        ray_origin = mathutils.Vector((x, 0.0, target_z))
+        ray_direction = mathutils.Vector((0.0, 1.0, 0.0))
         
-        # Left and Right points at the top of the rib (deck level)
-        # Note: In our ribs, deck level was the last point (x, width, height)
-        verts.append((x, -width, height))
-        verts.append((x, width, height))
+        max_hit_y = 0.0
+        hit_anything = False
         
-        # Create faces (quads) between ribs
-        if i > 0:
-            v_idx = i * 2
-            # Quad: (i-1)L, (i)L, (i)R, (i-1)R
-            faces.append((v_idx - 2, v_idx, v_idx + 1, v_idx - 1))
+        # Check against all Ribs, Stempost, and Sternpost
+        targets = [o for o in bpy.data.objects if (o.name.startswith("Rib_") and o.name != "Rib_Profile") or o.name in ["Stempost", "Sternpost"]]
+        
+        for target in targets:
+            inv_world = target.matrix_world.inverted()
+            origin_local = inv_world @ ray_origin
+            direction_local = inv_world.to_quaternion() @ ray_direction
+            
+            hit, loc, norm, index = target.ray_cast(origin_local, direction_local)
+            if hit:
+                world_loc = target.matrix_world @ loc
+                max_hit_y = max(max_hit_y, abs(world_loc.y))
+                hit_anything = True
+        
+        if hit_anything:
+            width = max_hit_y
+            # Left and Right points at the target Z level
+            verts.append((x, -width, target_z))
+            verts.append((x, width, target_z))
+            
+            # Create faces (quads)
+            if actual_verts_count > 0:
+                v_idx = actual_verts_count * 2
+                # Quad: (i-1)L, (i)L, (i)R, (i-1)R
+                faces.append((v_idx - 2, v_idx, v_idx + 1, v_idx - 1))
+            actual_verts_count += 1
             
     mesh.from_pydata(verts, [], faces)
     mesh.update()
@@ -59,7 +83,7 @@ def create_deck(name, num_ribs, half_length, rib_spacing, material_name):
 
 # Clean up existing decks
 for obj in bpy.data.objects:
-    if obj.name.startswith("Main_Deck"):
+    if obj.name.startswith("Main_Deck") or obj.name.startswith("Lower_Deck"):
         bpy.data.objects.remove(obj, do_unlink=True)
 
 # Material
@@ -69,10 +93,25 @@ if "Deck_Material" not in bpy.data.materials:
 else:
     mat = bpy.data.materials["Deck_Material"]
 
-# Create the main deck
-create_deck("Main_Deck", {num_ribs}, {half_length}, {rib_spacing}, "Deck_Material")
+# Get Keel top Z at center to define lower deck height (3.5m above keel)
+lower_deck_z = 3.5
+if "Keel" in bpy.data.objects:
+    keel = bpy.data.objects["Keel"]
+    import mathutils
+    ray_origin = mathutils.Vector((0.0, 0.0, 10.0))
+    ray_direction = mathutils.Vector((0.0, 0.0, -1.0))
+    inv_world = keel.matrix_world.inverted()
+    origin_local = inv_world @ ray_origin
+    direction_local = inv_world.to_quaternion() @ ray_direction
+    hit, loc, norm, index = keel.ray_cast(origin_local, direction_local)
+    if hit:
+        world_loc = keel.matrix_world @ loc
+        lower_deck_z = world_loc.z + 3.5
 
-print("Created Main Deck.")
+# Create the lower deck (flat)
+create_deck("Lower_Deck", {num_ribs}, -17.5, 17.5, 2.5, "Deck_Material", lower_deck_z)
+
+print(f"Created flat Lower Deck at Z={{lower_deck_z}} with improved fitting.")
 """
 
     try:

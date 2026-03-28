@@ -20,10 +20,14 @@ for obj in bpy.data.objects:
 # Bottom of Sternpost is at X=-18.95, Y=0, Z=0.4
 
 def create_fashion_piece(side):
+    # Refined coordinates: Straight vertical at X=-18.95, but horizontally curved
+    # Bottom at Z=2.0 (Y=0)
+    # Middle at Z=6.0 (Y=side * 5.0)
+    # Top at Z=12.0 (Y=side * 4.0)
     points = [
-        (-18.95, 0.0, 0.4), # Bottom at keel
-        (-19.5, side * 2.0, 4.0), # Middle curve
-        (-18.95, side * 4.0, 9.5) # Top at wing transom
+        (-18.95, 0.0, 2.0),
+        (-18.95, side * 5.0, 6.0),
+        (-18.95, side * 4.0, 12.0)
     ]
     
     curve_data = bpy.data.curves.new(f"Fashion_Piece_{side}", type='CURVE')
@@ -44,8 +48,8 @@ def create_fashion_piece(side):
         curve_data.bevel_mode = 'OBJECT'
         curve_data.bevel_object = bpy.data.objects["Post_Profile"]
     else:
-        # Create a simple profile
-        curve_data.bevel_depth = 0.2
+        # Create a thinner profile
+        curve_data.bevel_depth = 0.15
         
     curve_data.use_fill_caps = True
     

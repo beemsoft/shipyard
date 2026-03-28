@@ -114,41 +114,34 @@ def create_top(name, x, z, size, rake_angle, material_name="Rib_Material"):
     return obj
 
 def create_yard(name, x, y, z, length, center_dia, tip_dia, rotation_y_deg=0, rotation_z_deg=0, material_name="Rib_Material"):
-    # Create a mesh for the yard (tapered cylinder, thicker in center)
+    # Create a mesh for the yard (cylinder)
     mesh = bpy.data.meshes.new(name + "_Mesh")
     obj = bpy.data.objects.new(name, mesh)
     bpy.context.collection.objects.link(obj)
     
-    segments = 16
+    segments = 32
     verts = []
     faces = []
     
-    # Left tip
+    # Simple cylinder along Z-axis (local)
+    # Bottom circle
     for i in range(segments):
         angle = 2 * math.pi * i / segments
-        verts.append((0, math.cos(angle) * tip_dia / 2, -length / 2))
+        verts.append((math.cos(angle) * center_dia / 2, math.sin(angle) * center_dia / 2, -length / 2))
     
-    # Center
+    # Top circle
     for i in range(segments):
         angle = 2 * math.pi * i / segments
-        verts.append((0, math.cos(angle) * center_dia / 2, 0))
+        verts.append((math.cos(angle) * center_dia / 2, math.sin(angle) * center_dia / 2, length / 2))
         
-    # Right tip
-    for i in range(segments):
-        angle = 2 * math.pi * i / segments
-        verts.append((0, math.cos(angle) * tip_dia / 2, length / 2))
-        
-    # Sides (two sections: left to center, center to right)
+    # Sides
     for i in range(segments):
         next_i = (i + 1) % segments
-        # Left to center
         faces.append((i, next_i, next_i + segments, i + segments))
-        # Center to right
-        faces.append((i + segments, next_i + segments, next_i + 2 * segments, i + 2 * segments))
         
     # Caps
     faces.append(list(range(segments)))
-    faces.append(list(range(2 * segments, 3 * segments))[::-1])
+    faces.append(list(range(segments, 2 * segments))[::-1])
     
     mesh.from_pydata(verts, [], faces)
     mesh.update()
@@ -308,7 +301,9 @@ create_bowsprit("Bowsprit", bow_x, bow_z, bow_length, 1.0, bow_angle) # Diameter
 spritsail_dist = 15.0
 sy_x = bow_x + math.cos(math.radians(bow_angle)) * spritsail_dist
 sy_z = bow_z + math.sin(math.radians(bow_angle)) * spritsail_dist
-create_yard("Spritsail_Yard", sy_x, 0, sy_z, 10.0, 0.6, 0.3, rotation_y_deg=90-bow_angle, rotation_z_deg=90)
+# Position the yard parallel to the water surface (X-Y plane)
+# Increased size to be more proportional to the bow
+create_yard("Spritsail_Yard", sy_x, 0, sy_z, 14.0, 0.8, 0.4, rotation_y_deg=90, rotation_z_deg=90)
 
 print("Created masts: Foremast, Mainmast, Mizenmast, and Bowsprit.")
 """
